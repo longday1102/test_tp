@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import AutoTokenizer
 import torch
 
 from bitsandbytes.optim import AdamW8bit
@@ -8,6 +8,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from prompt import Prompter
 from utils.dataset_utils import PrepareDataset
+from utils.model_utils import load_model
 import tensor_parallel as tp
 from datasets import load_dataset
 
@@ -71,14 +72,11 @@ def main():
         train_dataloader = prepare_dataset.dataloader(train_data = train_data, batch_size = 1)
 
         # TRAINING
-        bnb_config = BitsAndBytesConfig(
-                load_in_4bit = True,
-                bnb_4bit_use_double_quant = True,
-                bnb_4bit_quant_type = "nf4",
-                bnb_4bit_compute_dtype = torch.float16
-                )
-        model = AutoModelForCausalLM.from_pretrained(model_checkpoint, quantization_config = bnb_config, device_map = "auto")    
-        model = tp.tensor_parallel(model)
+        model = load_model(model_checkpoint = model_checkpoint,
+                           quantize_mode = True,
+                           lora_mode = True,
+                           half_precision_mode = True)
+
         num_epochs = 1
         total_steps = num_epochs * len(train_dataloader)
         optimizer = AdamW8bit(model.parameters(), lr = 3e-4)

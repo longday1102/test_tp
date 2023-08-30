@@ -23,7 +23,7 @@ def load_model(model_checkpoint,
                                                                                 trust_remote_code = True),
                                                     trust_remote_code = True)
             
-    model = tp.TensorParallelPreTrainedModel(model, sharded = False, distributed = True)
+    model = tp.TensorParallelPreTrainedModel(model, sharded = False)
     
     if quantize_mode == True:
         bnb_config = BitsAndBytesConfig(

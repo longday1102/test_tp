@@ -58,9 +58,9 @@ def main():
                                         tokenizer = tokenizer)
     
         train_data = train_data.shuffle().map(prepare_dataset.generate_and_tokenize_prompt, 
-                                            num_proc = 64)
+                                            num_proc = 13)
         valid_data = valid_data.map(prepare_dataset.generate_and_tokenize_prompt,
-                                    num_proc = 64)
+                                    num_proc = 13)
     
         train_data = train_data.remove_columns(["instruction", "input", "id", "output"])
         valid_data = valid_data.remove_columns(["instruction", "input", "id", "output"])

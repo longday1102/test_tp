@@ -47,7 +47,7 @@ def load_model(model_checkpoint,
         converted_state_dict = tp.convert_state_dict(
             torch.load(shard_path),
             model.tensor_parallel_config,
-            world_size = 8,
+            world_size = 2,
             for_pretrained = True,
         )
         

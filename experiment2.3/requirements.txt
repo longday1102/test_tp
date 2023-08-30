@@ -1,0 +1,6 @@
+transformers
+peft
+accelerate
+tensor_parallel
+datasets
+bitsandbytes

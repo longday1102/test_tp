@@ -78,7 +78,7 @@ def main():
                 bnb_4bit_compute_dtype = torch.float16
                 )
         model = AutoModelForCausalLM.from_pretrained(model_checkpoint, quantization_config = bnb_config, device_map = "auto")    
-        model = tp.tensor_parallel(model, distributed = True)
+        model = tp.tensor_parallel(model)
         num_epochs = 1
         total_steps = num_epochs * len(train_dataloader)
         optimizer = AdamW8bit(model.parameters(), lr = 3e-4)

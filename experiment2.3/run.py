@@ -40,80 +40,81 @@ def main():
         ],
         "polyLM": "DAMO-NLP-MT/polylm-13b",
     }
-    if WORLD_RANK == 0:
-        # TOKENIZER
-        model_checkpoint = model_list["llama-2"][0]
-        tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
-        if model_checkpoint in model_list["llama-2"]:
-            tokenizer.pad_token = tokenizer.eos_token
-            tokenizer.pad_token_id = tokenizer.eos_token_id
+    # TOKENIZER
+    # model_checkpoint = model_list["llama-2"][0]
+    model_checkpoint = "longhoang06/my_model"
+    tokenizer = AutoTokenizer.from_pretrained("bigscience/bloom")
+    if model_checkpoint in model_list["llama-2"]:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
     
-        # DATASET
-        dataset = load_dataset("MBZUAI/Bactrian-X", "vi", split = "train")
-        splited_dataset = dataset.train_test_split(test_size = 0.1, seed = 42)
-        train_data = splited_dataset["train"]
-        valid_data = splited_dataset["test"]
+    # DATASET
+    dataset = load_dataset("MBZUAI/Bactrian-X", "vi", split = "train")
+    splited_dataset = dataset.train_test_split(test_size = 0.1, seed = 42)
+    train_data = splited_dataset["train"]
+    valid_data = splited_dataset["test"]
 
-        prompter = Prompter()
-        prepare_dataset = PrepareDataset(prompter = prompter,
-                                        tokenizer = tokenizer)
+    prompter = Prompter()
+    prepare_dataset = PrepareDataset(prompter = prompter,
+                                     tokenizer = tokenizer)
     
-        train_data = train_data.shuffle().map(prepare_dataset.generate_and_tokenize_prompt, 
-                                            num_proc = 13)
-        valid_data = valid_data.map(prepare_dataset.generate_and_tokenize_prompt,
-                                    num_proc = 13)
+    train_data = train_data.shuffle().map(prepare_dataset.generate_and_tokenize_prompt, 
+                                          num_proc = 13)
+    valid_data = valid_data.map(prepare_dataset.generate_and_tokenize_prompt,
+                                num_proc = 13)
     
-        train_data = train_data.remove_columns(["instruction", "input", "id", "output"])
-        valid_data = valid_data.remove_columns(["instruction", "input", "id", "output"])
+    train_data = train_data.remove_columns(["instruction", "input", "id", "output"])
+    valid_data = valid_data.remove_columns(["instruction", "input", "id", "output"])
 
-        train_data.set_format("torch")
-        valid_data.set_format("torch")
+    train_data.set_format("torch")
+    valid_data.set_format("torch")
 
-        train_dataloader = prepare_dataset.dataloader(train_data = train_data, batch_size = 1)
+    train_dataloader = prepare_dataset.dataloader(train_data = train_data, batch_size = 1)
 
-        # TRAINING
-        model = load_model(model_checkpoint = model_checkpoint,
-                           quantize_mode = True,
-                           lora_mode = True,
-                           half_precision_mode = True)
+    # TRAINING
+    model = load_model(model_checkpoint = model_checkpoint,
+                       world_rank = WORLD_RANK,
+                       quantize_mode = True,
+                       lora_mode = True,
+                       half_precision_mode = True)
 
-        num_epochs = 1
-        total_steps = num_epochs * len(train_dataloader)
-        optimizer = AdamW8bit(model.parameters(), lr = 3e-4)
-        lr_scheduler = CosineAnnealingLR(
-            optimizer = optimizer,
-            T_max = total_steps,
-            eta_min = 1e-8,
-            last_epoch = -1,
-        )
+    num_epochs = 1
+    total_steps = num_epochs * len(train_dataloader)
+    optimizer = AdamW8bit(model.parameters(), lr = 3e-4)
+    lr_scheduler = CosineAnnealingLR(
+        optimizer = optimizer,
+        T_max = total_steps,
+        eta_min = 1e-8,
+        last_epoch = -1,
+    )
 
-        log_steps = 1
-        scheduler_steps = 100
-        gradient_accumulation_steps = 4
+    log_steps = 1
+    scheduler_steps = 100
+    gradient_accumulation_steps = 4
     
-        for epoch in range(num_epochs):
-            total_loss = 0.0
-            model.train()
-            for step, batch in tqdm(enumerate(train_dataloader)):
-                batch = {k:v.to("cuda:0") for k, v in batch.items()}
+    for epoch in range(num_epochs):
+        total_loss = 0.0
+        model.train()
+        for step, batch in tqdm(enumerate(train_dataloader)):
+            batch = {k:v.to("cuda:0") for k, v in batch.items()}
       
-                outputs = model(**batch)
-                loss = outputs.loss
+            outputs = model(**batch)
+            loss = outputs.loss
             
-                total_loss += loss.item()
-                loss /= gradient_accumulation_steps
-                loss.backward()
+            total_loss += loss.item()
+            loss /= gradient_accumulation_steps
+            loss.backward()
 
-                if (step + 1) % gradient_accumulation_steps == 0:
-                    optimizer.step()
-                    optimizer.zero_grad()
+            if (step + 1) % gradient_accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
 
-                if (step + 1) % scheduler_steps == 0:
-                    lr_scheduler.step()
+            if (step + 1) % scheduler_steps == 0:
+                lr_scheduler.step()
             
-                if (step + 1) % log_steps == 0:
-                    cur_loss = total_loss/(step + 1)
-                    print(f'Epoch: {epoch + 1} -- step: {step + 1} -- train_loss: {total_loss/(step + 1)} -- ppl: {math.exp(cur_loss)}')
+            if (step + 1) % log_steps == 0 and WORLD_RANK == 0:
+                cur_loss = total_loss/(step + 1)
+                print(f'Epoch: {epoch + 1} -- step: {step + 1} -- train_loss: {total_loss/(step + 1)} -- ppl: {math.exp(cur_loss)}')
 
 if __name__ == "__main__":
     main()

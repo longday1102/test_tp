@@ -73,7 +73,7 @@ def main():
 
     # TRAINING
     model = load_model(model_checkpoint = model_checkpoint,
-                       world_rank = 2,
+                       world_size = 2,
                        quantize_mode = True,
                        lora_mode = True,
                        half_precision_mode = True)

@@ -9,6 +9,7 @@ from huggingface_hub import hf_hub_download
 import json
 
 def load_model(model_checkpoint,
+               world_rank = None,
                quantize_mode: bool = False,
                lora_mode: bool = False,
                half_precision_mode: bool = False,):
@@ -22,9 +23,12 @@ def load_model(model_checkpoint,
             model = AutoModelForCausalLM.from_config(AutoConfig.from_pretrained(model_checkpoint,
                                                                                 trust_remote_code = True),
                                                     trust_remote_code = True)
-            
-    model = tp.TensorParallelPreTrainedModel(model, sharded = False)
-    
+          
+    if world_rank is not None:        
+        model = tp.TensorParallelPreTrainedModel(model, device_ids = [world_rank], sharded = False)
+    else:
+        model = tp.TensorParallelPreTrainedModel(model, sharded = False)
+      
     if quantize_mode == True:
         bnb_config = BitsAndBytesConfig(
             load_in_4bit = True,

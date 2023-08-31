@@ -9,7 +9,7 @@ from huggingface_hub import hf_hub_download
 import json
 
 def load_model(model_checkpoint,
-               world_rank = None,
+               world_size: int,
                quantize_mode: bool = False,
                lora_mode: bool = False,
                half_precision_mode: bool = False,):
@@ -24,10 +24,7 @@ def load_model(model_checkpoint,
                                                                                 trust_remote_code = True),
                                                     trust_remote_code = True)
           
-    if world_rank is not None:        
-        model = tp.TensorParallelPreTrainedModel(model, device_ids = [world_rank], sharded = False)
-    else:
-        model = tp.TensorParallelPreTrainedModel(model, sharded = False)
+    model = tp.TensorParallelPreTrainedModel(model, sharded = False)
       
     if quantize_mode == True:
         bnb_config = BitsAndBytesConfig(
@@ -51,7 +48,7 @@ def load_model(model_checkpoint,
         converted_state_dict = tp.convert_state_dict(
             torch.load(shard_path),
             model.tensor_parallel_config,
-            world_size = 2,
+            world_size = world_size,
             for_pretrained = True,
         )
         

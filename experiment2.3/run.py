@@ -81,7 +81,7 @@ def main():
 
     num_epochs = 1
     total_steps = num_epochs * len(train_dataloader)
-    optimizer = AdamW8bit(model.parameters(), lr = 2e-5)
+    optimizer = AdamW(model.parameters(), lr = 2e-5)
     lr_scheduler = CosineAnnealingLR(
         optimizer = optimizer,
         T_max = total_steps,

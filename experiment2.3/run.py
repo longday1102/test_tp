@@ -4,6 +4,7 @@ import torch
 from bitsandbytes.optim import AdamW8bit
 
 import torch.distributed as dist
+from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from prompt import Prompter
@@ -80,7 +81,7 @@ def main():
 
     num_epochs = 1
     total_steps = num_epochs * len(train_dataloader)
-    optimizer = AdamW8bit(model.parameters(), lr = 3e-4)
+    optimizer = AdamW8bit(model.parameters(), lr = 2e-5)
     lr_scheduler = CosineAnnealingLR(
         optimizer = optimizer,
         T_max = total_steps,

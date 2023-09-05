@@ -12,7 +12,7 @@ class PrepareDataset:
     def tokenize(self,
                  prompt,
                  add_eos_token = True,
-                 max_length = 512,
+                 max_length = 256,
                  ):
         result = self.tokenizer(prompt,
                                 truncation = True,

@@ -1,4 +1,5 @@
 from transformers import AutoTokenizer
+import transformers
 import torch
 
 from bitsandbytes.optim import AdamW8bit
@@ -23,11 +24,11 @@ login(token = "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")
 
 def main():
     
-    # LOCAL_RANK = int(os.environ['LOCAL_RANK'])
-    # WORLD_SIZE = int(os.environ['WORLD_SIZE'])
-    # WORLD_RANK = int(os.environ['RANK'])
-    # dist.init_process_group(backend='nccl', rank = LOCAL_RANK, world_size = WORLD_SIZE)
-
+    LOCAL_RANK = int(os.environ['LOCAL_RANK'])
+    WORLD_SIZE = int(os.environ['WORLD_SIZE'])
+    WORLD_RANK = int(os.environ['RANK'])
+    dist.init_process_group(backend='nccl', rank = LOCAL_RANK, world_size = WORLD_SIZE)
+    device = torch.device("cuda:{}".format(LOCAL_RANK))
     # MODEL LIST
     model_list = {
         "llama-2": [
@@ -73,11 +74,13 @@ def main():
     train_dataloader = prepare_dataset.dataloader(train_data = train_data, batch_size = 1)
 
     # TRAINING
-    model = load_model(model_checkpoint = model_checkpoint,
-                       world_size = 2,
-                       quantize_mode = True,
-                       lora_mode = True,
-                       half_precision_mode = True)
+    # model = load_model(model_checkpoint = model_checkpoint,
+    #                    world_size = 2,
+    #                    quantize_mode = True,
+    #                    lora_mode = True,
+    #                    half_precision_mode = True)
+    model = transformers.AutoModelForCausalLM.from_pretrained(model_checkpoint, torch_dtype = torch.float16)
+    model = tp.tensor_parallel(model, device_ids = [device], distributed = True)
 
     num_epochs = 1
     total_steps = num_epochs * len(train_dataloader)

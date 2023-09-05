@@ -74,8 +74,8 @@ def main():
     # TRAINING
     model = load_model(model_checkpoint = model_checkpoint,
                        world_size = 2,
-                       quantize_mode = True,
-                       lora_mode = True,
+                       quantize_mode = False,
+                       lora_mode = False,
                        half_precision_mode = True)
 
     num_epochs = 1
@@ -112,7 +112,7 @@ def main():
             if (step + 1) % scheduler_steps == 0:
                 lr_scheduler.step()
             
-            if (step + 1) % log_steps == 0 and WORLD_RANK == 0:
+            if (step + 1) % log_steps == 0:
                 cur_loss = total_loss/(step + 1)
                 print(f'Epoch: {epoch + 1} -- step: {step + 1} -- train_loss: {total_loss/(step + 1)} -- ppl: {math.exp(cur_loss)}')
 

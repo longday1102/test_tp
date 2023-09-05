@@ -22,10 +22,10 @@ login(token = "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")
 
 def main():
     
-    LOCAL_RANK = int(os.environ['LOCAL_RANK'])
-    WORLD_SIZE = int(os.environ['WORLD_SIZE'])
-    WORLD_RANK = int(os.environ['RANK'])
-    dist.init_process_group(backend='nccl', rank = LOCAL_RANK, world_size = WORLD_SIZE)
+    # LOCAL_RANK = int(os.environ['LOCAL_RANK'])
+    # WORLD_SIZE = int(os.environ['WORLD_SIZE'])
+    # WORLD_RANK = int(os.environ['RANK'])
+    # dist.init_process_group(backend='nccl', rank = LOCAL_RANK, world_size = WORLD_SIZE)
 
     # MODEL LIST
     model_list = {
@@ -51,7 +51,7 @@ def main():
     # DATASET
     dataset = load_dataset("MBZUAI/Bactrian-X", "vi", split = "train")
     splited_dataset = dataset.train_test_split(test_size = 0.1, seed = 42)
-    train_data = splited_dataset["train"]
+    train_data = splited_dataset["test"]
     valid_data = splited_dataset["test"]
 
     prompter = Prompter()

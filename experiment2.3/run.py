@@ -77,7 +77,7 @@ def main():
                        world_size = 2,
                        quantize_mode = False,
                        lora_mode = False,
-                       half_precision_mode = True)
+                       half_precision_mode = False)
 
     num_epochs = 1
     total_steps = num_epochs * len(train_dataloader)

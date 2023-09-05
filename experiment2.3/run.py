@@ -75,13 +75,13 @@ def main():
     # TRAINING
     model = load_model(model_checkpoint = model_checkpoint,
                        world_size = 2,
-                       quantize_mode = False,
-                       lora_mode = False,
-                       half_precision_mode = False)
+                       quantize_mode = True,
+                       lora_mode = True,
+                       half_precision_mode = True)
 
     num_epochs = 1
     total_steps = num_epochs * len(train_dataloader)
-    optimizer = AdamW(model.parameters(), lr = 2e-5)
+    optimizer = AdamW(model.parameters(), lr = 3e-4)
     lr_scheduler = CosineAnnealingLR(
         optimizer = optimizer,
         T_max = total_steps,
